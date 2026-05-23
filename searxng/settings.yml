@@ -1,0 +1,11 @@
+use_default_settings: true
+
+server:
+    # This must match the subpath we set in Nginx
+    base_url: http://localhost:9001/search
+    secret_key: "secret" # Generate a random string here
+
+search:
+    formats:
+        - html
+        - json  # <--- CRITICAL: Without this, the fetch() fails

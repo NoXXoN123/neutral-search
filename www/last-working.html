@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Search</h1>
+    
+    <input type="text" id="query" placeholder="Search...">
+    <button onclick="run()">Search</button>
+
+    <div id="ai-section" style="border: 1px solid blue; margin: 10px; padding: 10px; display:none;">
+        <strong>AI Summary:</strong>
+        <p id="ai-out"></p>
+    </div>
+
+    <div id="results-list"></div>
+
+    <script>
+        async function run() {
+            const q = document.getElementById('query').value;
+            const resList = document.getElementById('results-list');
+            const aiOut = document.getElementById('ai-out');
+            const aiSection = document.getElementById('ai-section');
+
+            resList.innerHTML = "Fetching results...";
+            aiSection.style.display = 'none';
+
+            try {
+                // 1. Get Search Results
+                const searchRes = await fetch(`/search?q=${encodeURIComponent(q)}&format=json`);
+                const data = await searchRes.json();
+
+                if (!data.results || data.results.length === 0) {
+                    resList.innerHTML = "No results found.";
+                    return;
+                }
+
+                // 2. Render Results
+                resList.innerHTML = data.results.map(r => `
+                    <div>
+                        <a href="${r.url}">${r.title}</a>
+                        <p>${r.content || r.snippet || 'No snippet available'}</p>
+                    </div>
+                `).join('<hr>');
+
+                // 3. Trigger AI
+                aiSection.style.display = 'block';
+                aiOut.innerText = "AI is thinking...";
+
+                const context = data.results.slice(0, 5).map(r => r.content || r.snippet).join("\n");
+                
+                const aiRes = await fetch('/api/summarize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: q, context: context })
+                });
+
+                const aiData = await aiRes.json();
+                aiOut.innerText = aiData.text || "AI Error: No text returned";
+
+            } catch (err) {
+                resList.innerHTML = "Fatal Error: " + err.message;
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>

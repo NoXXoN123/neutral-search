@@ -1,0 +1,25 @@
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng_backend
+    restart: unless-stopped
+    # We keep 9001 open so you can test the backend directly
+    ports:
+      - "9001:8080" 
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    environment:
+      # Change this to your domain later once cloudflared is up
+      - SEARXNG_BASE_URL=http://5.83.153.144:9002/search
+
+  nginx-frontend:
+    image: nginx:alpine
+    container_name: search_frontend
+    restart: unless-stopped
+    ports:
+      - "9002:80" 
+    volumes:
+      - ./www:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - searxng
